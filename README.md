@@ -54,6 +54,7 @@ python app.py
 | `download_status` | 查下载进度 | task_id |
 | `get_video_info` | 看画质列表 | video_id |
 | `list_downloads` | 列出已下载 | limit |
+| `rename_download` | 重命名文件 | video_id, new_name, quality |
 | `delete_download` | 删记录 + 文件 | video_id, quality |
 
 ## 配置文件 `config.ini`

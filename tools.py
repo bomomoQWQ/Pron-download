@@ -199,3 +199,87 @@ def register_tools(mcp):
         await db_delete_download(video_id, quality or None)
         
         return {"deleted": True, "message": f"已删除 {video_id} 的下载记录"}
+
+    @mcp.tool
+    async def rename_download(
+        video_id: str,
+        new_name: str = "",
+        quality: str = "",
+    ) -> dict:
+        """
+        重命名已下载的视频文件。
+
+        Args:
+            video_id: 视频 ID
+            new_name: 新文件名（不含扩展名）。为空则自动使用视频标题
+            quality: 画质。为空则重命名该视频所有画质的文件
+
+        Returns:
+            {"renamed": [{"old": str, "new": str}], "message": str}
+        """
+        import os
+        import re
+        from pathlib import Path
+        from engine.db import get_db, get_video_meta
+
+        db = await get_db()
+        try:
+            # 查文件记录
+            if quality:
+                cursor = await db.execute(
+                    "SELECT file_path, quality FROM download_records WHERE video_id = ? AND quality = ?",
+                    (video_id, quality)
+                )
+            else:
+                cursor = await db.execute(
+                    "SELECT file_path, quality FROM download_records WHERE video_id = ?", (video_id,)
+                )
+            rows = await cursor.fetchall()
+            if not rows:
+                return {"error": f"未找到 {video_id} 的下载记录"}
+
+            # 确定新名字
+            if not new_name:
+                meta = await get_video_meta(video_id)
+                new_name = (meta.get("title") or video_id) if meta else video_id
+
+            # 安全化文件名（去非法字符，限长）
+            safe = re.sub(r'[\\/:*?"<>|]', '', new_name).strip()[:120]
+
+            renamed = []
+            for row in rows:
+                old = row["file_path"]
+                q = row["quality"]
+                if not old or not os.path.exists(old):
+                    continue
+
+                ext = Path(old).suffix
+                new_path = str(Path(old).parent / f"{safe}_{q}{ext}")
+
+                if old == new_path:
+                    continue
+
+                os.rename(old, new_path)
+                renamed.append({"old": old, "new": new_path})
+
+                # 更新数据库
+                await db.execute(
+                    "UPDATE download_records SET file_path = ? WHERE video_id = ? AND quality = ?",
+                    (new_path, video_id, q)
+                )
+                # 也更新 download_tasks 里的路径
+                await db.execute(
+                    "UPDATE download_tasks SET file_path = ? WHERE video_id = ? AND quality = ?",
+                    (new_path, video_id, q)
+                )
+
+            await db.commit()
+
+            if renamed:
+                return {
+                    "renamed": renamed,
+                    "message": f"已重命名 {len(renamed)} 个文件 → {safe}"
+                }
+            return {"message": "文件已是目标名称，无需重命名"}
+        finally:
+            await db.close()

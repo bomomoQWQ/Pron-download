@@ -72,6 +72,18 @@ search_videos("japanese", max_results=5)
 ### `list_downloads`
 列出已下载的所有视频。
 
+### `rename_download`
+重命名已下载的视频文件，支持自定义名称或自动使用视频标题。
+
+| 参数 | 默认值 | 说明 |
+|---|---|---|
+| `video_id` | 必填 | 视频 ID |
+| `new_name` | `""` | 新文件名（不含扩展名），为空则自动用视频标题 |
+| `quality` | `""` | 画质，为空则重命名该视频所有画质的文件 |
+
+返回：`{renamed: [{old, new}], message}`
+示例：`6a26fc4830d40_best.mp4` → `omg-your-dick_best.mp4`
+
 ### `delete_download`
 删除下载记录和对应文件。
 

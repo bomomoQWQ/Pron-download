@@ -65,7 +65,10 @@ async def fetch_video_details(video_id: str, timeout: int = 30) -> Optional[dict
         embed_path = SERVICE_CONFIG.get("embed_path", "/embed/{video_id}")
         embed_url = base + embed_path.format(video_id=video_id)
 
-        await page.goto(embed_url, wait_until="networkidle", timeout=timeout * 1000)
+        try:
+            await page.goto(embed_url, wait_until="networkidle", timeout=timeout * 1000)
+        except Exception:
+            await page.goto(embed_url, wait_until="load", timeout=timeout * 1000)
 
         html = await page.content()
         cookies = await page.context.cookies()

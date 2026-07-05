@@ -129,8 +129,12 @@ async def search_videos(
         # 人类化延迟
         await human_delay(min_delay, min_delay + 1.0)
         
-        # 访问搜索页
-        await page.goto(search_url, wait_until="networkidle", timeout=timeout * 1000)
+        # 访问搜索页（networkidle 优先，超时降级为 load）
+        try:
+            await page.goto(search_url, wait_until="networkidle", timeout=timeout * 1000)
+        except Exception:
+            # 页面有持续后台请求（analytics 等），networkidle 永远不触发，降级
+            await page.goto(search_url, wait_until="load", timeout=timeout * 1000)
         
         # 处理 Cookie 弹窗
         try:

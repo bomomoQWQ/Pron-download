@@ -1,0 +1,9 @@
+fastmcp>=2.0
+fastapi>=0.115
+uvicorn[standard]>=0.30
+playwright>=1.40
+aiosqlite>=0.20
+
+# aria2 是系统依赖，需单独安装:
+#   Windows: https://github.com/aria2/aria2/releases (aria2c.exe 放 PATH)
+#   Linux:   apt install aria2 / brew install aria2

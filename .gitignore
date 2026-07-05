@@ -1,0 +1,7 @@
+downloads/*
+!downloads/.gitkeep
+data.db
+cookies.json
+__pycache__/
+*.pyc
+.venv/
